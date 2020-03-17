@@ -1,8 +1,13 @@
 package com.thoughtworks;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class App {
 
@@ -45,34 +50,71 @@ public class App {
   }
 
   public static List<Transaction> get2011Transactions(List<Transaction> transactions) {
-    return Collections.emptyList();
+    Stream<Transaction> stream = transactions.stream();
+    stream=stream.filter((Transaction tr)-> tr.getYear()==2011);
+    stream=stream.sorted(Comparator.comparingInt(Transaction::getValue));
+    return stream.collect(Collectors.toList());
   }
 
   public static List<String> getTradersCity(List<Transaction> transactions) {
-    return Collections.emptyList();
+    Stream<Transaction> stream = transactions.stream();
+    Stream<Trader> stream2 = stream.map((Transaction::getTrader));
+    Stream<String> stream3 = stream2.map((Trader::getCity));
+    stream3 = stream3.distinct();
+    return stream3.collect(Collectors.toList());
   }
 
   public static List<Trader> getCambridgeTraders(List<Transaction> transactions) {
-    return Collections.emptyList();
+    Stream<Transaction> stream = transactions.stream();
+    stream=stream.filter((Transaction tr)-> tr.getTrader().getCity().equals("Cambridge"));
+    Stream<Trader>stream2 =stream.map(Transaction::getTrader);
+    stream2=stream2.filter(distinctByKey(Trader::getName));
+    stream2 = stream2.sorted(Comparator.comparing(Trader::getName));
+    return stream2.collect(Collectors.toList());
   }
 
   public static List<String> getTradersName(List<Transaction> transactions) {
-    return Collections.emptyList();
+    Stream<Transaction> stream = transactions.stream();
+    Stream<Trader> stream2 = stream.map(Transaction::getTrader);
+    stream2 = stream2.filter(distinctByKey(Trader::getName));
+    Stream<String> stream3 = stream2.map(Trader::getName);
+    stream3=stream3.sorted();
+    return stream3.collect(Collectors.toList());
   }
 
   public static boolean hasMilanTrader(List<Transaction> transactions) {
-    return false;
+    Stream<Transaction> stream = transactions.stream();
+    Stream<Trader> stream2 = stream.map(Transaction::getTrader);
+    stream2=stream2.filter((Trader tr)-> tr.getCity().equals("Milan"));
+    return !stream2.collect(Collectors.toList()).isEmpty();
   }
 
   public static List<Integer> getCambridgeTransactionsValue(List<Transaction> transactions) {
-    return Collections.emptyList();
+    Stream<Transaction> stream = transactions.stream();
+    stream = stream.filter((Transaction tr)-> tr.getTrader().getCity().equals("Cambridge"));
+    Stream<Integer> stream2=stream.map(Transaction::getValue);
+    return stream2.collect(Collectors.toList());
   }
 
   public static int getMaxTransactionValue(List<Transaction> transactions) {
-    return 0;
+    Stream<Transaction> stream = transactions.stream();
+    Stream<Integer> stream2=stream.map(Transaction::getValue);
+    stream2=stream2.sorted(Collections.reverseOrder());
+    stream2 = stream2.limit(1);
+    AtomicInteger count = new AtomicInteger();
+    stream2.forEach(count::set);
+    return count.get();
   }
 
   public static Transaction getMinTransaction(List<Transaction> transactions) {
-    return null;
+    Stream<Transaction> stream = transactions.stream();
+    stream=stream.sorted(Comparator.comparing(Transaction::getValue));
+    stream = stream.limit(1);
+    List<Transaction> list = stream.collect(Collectors.toList());
+    return list.get(0);
+  }
+  public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+    Set<Object> seen = ConcurrentHashMap.newKeySet();
+    return t -> seen.add(keyExtractor.apply(t));
   }
 }
